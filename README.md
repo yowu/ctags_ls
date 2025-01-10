@@ -1,7 +1,7 @@
 
 # ctags_ls
 
-`ctags_ls` is a simple `ctags` Language Server for editors that do not natively support ctags.
+`ctags_ls` is a simple language server implementation for editors that do not natively support ctags.
 
 > [!NOTE]
 > This is not a full-featured LSP and only supports basic functionalities such as go-to definition, declaration, and implementation.
