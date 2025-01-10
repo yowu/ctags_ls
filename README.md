@@ -63,10 +63,3 @@ To configure `ctags_ls` with Zed, add the following to your `settings.json` to h
 }
 ```
 
-## Contributing
-
-As this is a personal project for learning Rust, contributions are not expected. However, if you find it interesting and want to contribute, feel free to fork the repository and submit a pull request.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
