@@ -42,7 +42,7 @@ impl InitializeHandler {
         }
     }
 
-    pub fn handle_request(&self, req: Request, server: &LspServer) -> io::Result<()> {
+    pub fn handle(&self, req: Request, server: &LspServer) -> io::Result<()> {
         Logger::info("Received initialize request");
         let params: InitializeParams = serde_json::from_value(req.params)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;

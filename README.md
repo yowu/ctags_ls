@@ -19,7 +19,7 @@ ctags -R --fields=+K .
 ```
 
 By default, the tags file should be named `tags` and placed in the root of the workspace. However, you can specify your tags files from the `initialization_options` configuration.
-1`
+
 > [!NOTE]
 > The `kind` field is **required** when generating the tags file.
 

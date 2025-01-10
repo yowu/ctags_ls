@@ -91,7 +91,7 @@ impl LspServer {
 
     fn handle_request(&self, req: Request) -> io::Result<()> {
         match req.method.as_str() {
-            "initialize" => InitializeHandler.handle_request(req, self),
+            "initialize" => InitializeHandler.handle(req, self),
             "textDocument/definition" => GotoDefinitionHandler.handle(req, self),
             "textDocument/declaration" => GotoDeclarationHandler.handle(req, self),
             "textDocument/implementation" => GotoImplementationHandler.handle(req, self),
