@@ -1,10 +1,10 @@
 
 # ctags_ls
 
-`ctags_ls` is a simple language server implementation for editors that do not natively support ctags.
+`ctags_ls` is a simple language server implementation to use `ctags` in the editors that do not natively support it.
 
 > [!NOTE]
-> This is not a full-featured LSP and only supports basic functionalities such as go-to definition, declaration, and implementation.
+> This is not a full-featured language server and only supports basic functionalities such as goto definition, declaration, and implementation so far.
 
 ## Prerequisites
 
@@ -12,16 +12,8 @@
 
 ### Generating the Tags File
 
-Run the following command in the root of your workspace:
+You need to generate tags file for your project before using the `ctags_ls`. By default, the tags file should be named `tags` and placed in the root of the workspace. However, you can specify your tags files from the `initialization_options` configuration.
 
-```sh
-ctags -R --fields=+K .
-```
-
-By default, the tags file should be named `tags` and placed in the root of the workspace. However, you can specify your tags files from the `initialization_options` configuration.
-
-> [!NOTE]
-> The `kind` field is **required** when generating the tags file.
 
 ## Editor Configuration
 
