@@ -10,7 +10,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            artifact_path: target/release/ctags_ls.exe
+          - os: ubuntu-latest
+            artifact_path: target/release/ctags_ls
+          - os: macos-latest
+            artifact_path: target/release/ctags_ls
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -34,6 +41,6 @@ jobs:
             This is a release for ctags_ls version ${{ github.ref_name }}.
             Please refer to the changelog for details.
           files: |
-            target/release/ctags_ls${{ '.exe' if matrix.os == 'windows-latest' else '' }}
+            ${{ matrix.artifact_path }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
