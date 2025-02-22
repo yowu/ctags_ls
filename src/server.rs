@@ -8,51 +8,44 @@ use std::{
 
 use lsp_server::{Connection, Message, Request, Response};
 use lsp_types::{
-    DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
+    DidChangeTextDocumentParams, DidChangeWorkspaceFoldersParams, DidCloseTextDocumentParams,
+    DidOpenTextDocumentParams,
 };
 
 use crate::{
     ctags::CtagsEntry,
+    document::{DocumentsCache, TextDocument},
     goto_handler::GotoHandler,
     initialize_handler::InitializeHandler,
     logger::Logger,
-    utils::{DocumentsCache, TextDocument, Workspace},
+    workspace::WorkspaceManager,
 };
 
 pub struct LspServer {
     pub connection: Connection,
-    pub workspaces: Mutex<Vec<Workspace>>,
     pub documents: Mutex<DocumentsCache>,
+    pub workspace_manager: Mutex<WorkspaceManager>,
     shutdown_requested: Arc<AtomicBool>,
 }
 
 pub struct GotoDefinitionHandler;
 impl GotoHandler for GotoDefinitionHandler {
     fn filter(&self, entry: &CtagsEntry) -> bool {
-        match entry.kind.as_str() {
-            "p" | "prototype" => false,
-            _ => true,
-        }
+        !matches!(entry.kind.as_str(), "p" | "prototype")
     }
 }
 
 pub struct GotoDeclarationHandler;
 impl GotoHandler for GotoDeclarationHandler {
     fn filter(&self, entry: &CtagsEntry) -> bool {
-        match entry.kind.as_str() {
-            "p" | "prototype" => true,
-            _ => false,
-        }
+        matches!(entry.kind.as_str(), "p" | "prototype")
     }
 }
 
 pub struct GotoImplementationHandler;
 impl GotoHandler for GotoImplementationHandler {
     fn filter(&self, entry: &CtagsEntry) -> bool {
-        match entry.kind.as_str() {
-            "f" | "function" => true,
-            _ => false,
-        }
+        matches!(entry.kind.as_str(), "f" | "function")
     }
 }
 
@@ -60,8 +53,8 @@ impl LspServer {
     pub fn new(connection: Connection) -> Self {
         Self {
             connection,
-            workspaces: Mutex::new(Vec::new()),
             documents: Mutex::new(DocumentsCache::new()),
+            workspace_manager: Mutex::new(WorkspaceManager::new(vec!["tags".to_string()])),
             shutdown_requested: Arc::new(AtomicBool::new(false)),
         }
     }
@@ -135,6 +128,18 @@ impl LspServer {
                     .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
                 let mut documents = self.documents.lock().unwrap();
                 documents.remove(&params.text_document.uri);
+            }
+            "workspace/didChangeWorkspaceFolders" => {
+                let params: DidChangeWorkspaceFoldersParams = serde_json::from_value(notif.params)?;
+                let mut manager = self.workspace_manager.lock().unwrap();
+
+                for folder in &params.event.removed {
+                    manager.remove_workspace(folder);
+                }
+
+                for folder in &params.event.added {
+                    manager.add_workspace(folder);
+                }
             }
             _ => {
                 Logger::info(&format!(

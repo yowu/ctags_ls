@@ -7,12 +7,12 @@ use std::{
 use lsp_server::{Message, Request, Response};
 use lsp_types::{GotoDefinitionParams, GotoDefinitionResponse, Location, Position, Range, Url};
 
-use crate::LspServer;
 use crate::{
     ctags::{CtagsEntry, CtagsHandler},
+    document::DocumentsCache,
     logger::Logger,
-    utils::{DocumentsCache, Workspace},
 };
+use crate::{workspace::Workspace, LspServer};
 
 fn find_tags_location(entries: &Vec<CtagsEntry>, locations: &mut Vec<Location>) -> io::Result<()> {
     // Group entries by file to minimize file reads
@@ -85,7 +85,7 @@ pub trait GotoHandler {
                 io::Error::new(io::ErrorKind::NotFound, "Document not found")
             })?
             .get_symbol_at_position(position)?;
-        let entries = CtagsHandler::query_ctags(&workspaces, &symbol)?;
+        let entries = CtagsHandler::query_ctags(workspaces, &symbol)?;
         let mut locations: Vec<Location> = Vec::new();
         find_tags_location(
             &entries
@@ -107,9 +107,9 @@ pub trait GotoHandler {
         let params: GotoDefinitionParams = serde_json::from_value(req.params)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
 
-        let workspaces = server.workspaces.lock().unwrap();
+        let workspace_manager = server.workspace_manager.lock().unwrap();
         let documents = server.documents.lock().unwrap();
-        let response = self.handle_goto(&workspaces, params, &documents)?;
+        let response = self.handle_goto(&workspace_manager.workspaces, params, &documents)?;
 
         let resp = Response::new_ok(req.id.clone(), response);
         server

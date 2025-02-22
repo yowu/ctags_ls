@@ -1,12 +1,6 @@
 use std::{collections::HashMap, io};
 
-use lsp_types::{Position, TextDocumentContentChangeEvent, Url, WorkspaceFolder};
-
-#[derive(Debug)]
-pub struct Workspace {
-    pub folder: WorkspaceFolder,
-    pub tag_file_path: Option<String>,
-}
+use lsp_types::{Position, TextDocumentContentChangeEvent, Url};
 
 pub struct TextDocument {
     text: String,
@@ -44,7 +38,7 @@ impl TextDocument {
                 offset += position.character as usize;
                 break;
             }
-            offset += line.len() + 0; // +1 for the newline character
+            offset += line.len() + 1; // +1 for the newline character
         }
         offset
     }

@@ -1,4 +1,4 @@
-use std::{io, path::Path};
+use std::io;
 
 use lsp_server::{Message, Request, Response};
 use lsp_types::{
@@ -6,40 +6,37 @@ use lsp_types::{
     ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind,
 };
 
-use crate::{logger::Logger, utils::Workspace, LspServer};
+use crate::{logger::Logger, workspace::WorkspaceManager, LspServer};
 
 pub struct InitializeHandler;
 
 impl InitializeHandler {
-    fn initialize_workspaces(params: InitializeParams, workspaces: &mut Vec<Workspace>) {
-        let default_tags = vec!["tags".to_string()];
-        let tags = if let Some(options) = params.initialization_options {
-            if let Some(tags) = options.get("tags") {
-                serde_json::from_value(tags.clone()).unwrap_or(default_tags)
-            } else {
-                default_tags
-            }
-        } else {
-            default_tags
-        };
+    fn initialize_workspaces(params: &InitializeParams) -> WorkspaceManager {
+        let tag_patterns = params
+            .initialization_options
+            .as_ref()
+            .and_then(|options| options.get("tags"))
+            .and_then(|tags| serde_json::from_value(tags.clone()).ok())
+            .unwrap_or_else(|| vec!["tags".to_string()]);
 
-        workspaces.clear();
+        Logger::info(&format!("Initialize tag patterns: {:?}", tag_patterns));
+        let mut manager = WorkspaceManager::new(tag_patterns);
 
-        for folder in params.workspace_folders.unwrap_or_default() {
-            let folder_path = folder.uri.to_file_path().unwrap();
-            let mut tag_file_path = None;
-            for tag in &tags {
-                let tags_path = format!("{}/{}", folder_path.display(), tag);
-                if Path::new(&tags_path).exists() {
-                    tag_file_path = Some(tags_path);
-                    break;
-                }
+        if let Some(folders) = params.workspace_folders.as_ref() {
+            for folder in folders {
+                manager.add_workspace(folder);
             }
-            workspaces.push(Workspace {
-                folder,
-                tag_file_path,
-            });
         }
+        /*
+        else if let Some(root_uri) = params.root_uri.as_ref() {
+            let folder = WorkspaceFolder {
+                uri: root_uri.clone(),
+                name: "root".to_string(),
+            };
+            manager.add_workspace(&folder);
+        }
+        */
+        manager
     }
 
     pub fn handle(&self, req: Request, server: &LspServer) -> io::Result<()> {
@@ -47,19 +44,12 @@ impl InitializeHandler {
         let params: InitializeParams = serde_json::from_value(req.params)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
 
-        InitializeHandler::initialize_workspaces(
-            params,
-            server.workspaces.lock().unwrap().as_mut(),
-        );
-
-        // check if the workspace has a tags file
-        let workspaces = server.workspaces.lock().unwrap();
-        let has_tags = workspaces
-            .iter()
-            .any(|workspace| workspace.tag_file_path.is_some());
-        if !has_tags {
-            Logger::error("No tags file found in workspace");
-        }
+        let mut manager = server.workspace_manager.lock().unwrap();
+        *manager = InitializeHandler::initialize_workspaces(&params);
+        Logger::info(&format!(
+            "Initializing {} workspaces",
+            manager.workspaces.len()
+        ));
 
         let kind = TextDocumentSyncCapability::Kind(TextDocumentSyncKind::FULL);
         let server_capabilities = ServerCapabilities::default();

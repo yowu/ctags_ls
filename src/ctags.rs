@@ -3,7 +3,7 @@ use std::{
     process::Command,
 };
 
-use crate::{logger::Logger, utils::Workspace};
+use crate::{logger::Logger, workspace::Workspace};
 
 #[derive(Debug)]
 pub struct CtagsEntry {
@@ -67,7 +67,7 @@ impl CtagsHandler {
             file: format!(
                 "{}/{}",
                 workspace.folder.uri.to_file_path().unwrap().display(),
-                parts[1].to_string()
+                parts[1]
             ),
             pattern: pattern.to_string(),
             kind: kind_parts[1].to_string(),

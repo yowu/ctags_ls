@@ -3,7 +3,8 @@ mod goto_handler;
 mod initialize_handler;
 mod logger;
 mod server;
-mod utils;
+mod document;
+mod workspace;
 
 use logger::Logger;
 use lsp_server::Connection;
