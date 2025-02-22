@@ -3,7 +3,7 @@ name: Rust Build and Release
 on:
   push:
     tags:
-      - "v*" # Trigger the workflow when a tag starting with 'v' is pushed, indicating a version change
+      - "v*"
 
 permissions:
   deployments: write
@@ -18,10 +18,13 @@ jobs:
         include:
           - os: windows-latest
             artifact_path: target/release/ctags_ls.exe
+            zip_name: ctags_ls-windows-x86_64.zip
           - os: ubuntu-latest
             artifact_path: target/release/ctags_ls
+            zip_name: ctags_ls-linux-x86_64.zip
           - os: macos-latest
             artifact_path: target/release/ctags_ls
+            zip_name: ctags_ls-macos-x86_64.zip
 
     steps:
       - name: Checkout code
@@ -36,6 +39,15 @@ jobs:
       - name: Build the project
         run: cargo build --release
 
+      - name: Zip artifact (Windows)
+        if: matrix.os == 'windows-latest'
+        run: Compress-Archive -Path ${{ matrix.artifact_path }} -DestinationPath ${{ matrix.zip_name }}
+        shell: pwsh
+
+      - name: Zip artifact (Unix)
+        if: matrix.os != 'windows-latest'
+        run: zip ${{ matrix.zip_name }} ${{ matrix.artifact_path }}
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: github.ref_type == 'tag'
@@ -46,6 +58,6 @@ jobs:
             This is a release for ctags_ls version ${{ github.ref_name }}.
             Please refer to the changelog for details.
           files: |
-            ${{ matrix.artifact_path }}
+            ${{ matrix.zip_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
