@@ -3,7 +3,11 @@ name: Rust Build and Release
 on:
   push:
     tags:
-      - 'v*'  # Trigger the workflow when a tag starting with 'v' is pushed, indicating a version change
+      - "v*" # Trigger the workflow when a tag starting with 'v' is pushed, indicating a version change
+
+permissions:
+  deployments: write
+  contents: read
 
 jobs:
   build_and_release:
@@ -36,7 +40,7 @@ jobs:
         if: github.ref_type == 'tag'
         with:
           tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           body: |
             This is a release for ctags_ls version ${{ github.ref_name }}.
             Please refer to the changelog for details.
