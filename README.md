@@ -4,7 +4,7 @@
 `ctags_ls` is a simple language server implementation to use `ctags` in the editors that do not natively support it.
 
 > [!NOTE]
-> This is not a full-featured language server and only supports basic functionalities such as goto definition, declaration, and implementation so far.
+> This is not a full-featured language server and only supports basic functionalities such as goto definition, declaration, and implementation so far. It has been tested with Helix Editor and Zed Editor for C++ projects only.
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ You need to generate tags file for your project before using the `ctags_ls`. By 
 
 ### Helix Editor
 
-To configure `ctags_ls` with Helix, add the following to your `languages.toml`:
+To configure `ctags_ls` with Helix for C++, add the following to your `languages.toml`:
 
 ```toml
 [language-server.ctags_ls]
@@ -33,7 +33,7 @@ language-servers = ["ctags_ls"]
 
 ### Zed Editor
 
-To configure `ctags_ls` with Zed, add the following to your `settings.json` to hijack the clangd configuration:
+To configure `ctags_ls` with Zed for C++, add the following to your `settings.json` to hijack the clangd configuration:
 
 ```json
 {
