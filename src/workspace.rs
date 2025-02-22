@@ -30,6 +30,11 @@ impl WorkspaceManager {
     }
 
     pub fn add_workspace(&mut self, folder: &WorkspaceFolder) {
+        if self.workspaces.iter().any(|w| w.folder.uri == folder.uri) {
+            Logger::info(&format!("Workspace already exists: {}", folder.uri));
+            return;
+        }
+
         let folder_path = if let Ok(path) = folder.uri.to_file_path() {
             path
         } else {

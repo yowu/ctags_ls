@@ -6,9 +6,7 @@ on:
       - "v*"
 
 permissions:
-  deployments: write
   contents: write
-  packages: write
 
 jobs:
   build_and_release:

@@ -3,7 +3,7 @@ use std::io;
 use lsp_server::{Message, Request, Response};
 use lsp_types::{
     DeclarationCapability, ImplementationProviderCapability, InitializeParams, InitializeResult,
-    ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind,
+    ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind, WorkspaceFolder,
 };
 
 use crate::{logger::Logger, workspace::WorkspaceManager, LspServer};
@@ -26,16 +26,13 @@ impl InitializeHandler {
             for folder in folders {
                 manager.add_workspace(folder);
             }
-        }
-        /*
-        else if let Some(root_uri) = params.root_uri.as_ref() {
+        } else if let Some(root_uri) = params.root_uri.as_ref() {
             let folder = WorkspaceFolder {
                 uri: root_uri.clone(),
                 name: "root".to_string(),
             };
             manager.add_workspace(&folder);
         }
-        */
         manager
     }
 
