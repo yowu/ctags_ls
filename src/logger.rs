@@ -1,4 +1,4 @@
-use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::{self, Write};
 
 pub struct Logger;
@@ -7,16 +7,20 @@ impl Logger {
     pub fn setup() -> io::Result<()> {
         let mut log_file_path = std::env::temp_dir();
         log_file_path.push("ctags_ls.log");
-        let log_file = File::create(log_file_path)?;
 
+        let log_file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(log_file_path)?;
         env_logger::Builder::new()
             .filter(None, log::LevelFilter::Info)
             .format(|buf, record| {
                 writeln!(
                     buf,
-                    "{} [{}] - {}",
+                    "{} [{}] [PID: {}]- {}",
                     chrono::Local::now().format("%Y-%m-%dT%H:%M:%S"),
                     record.level(),
+                    std::process::id(),
                     record.args()
                 )
             })
