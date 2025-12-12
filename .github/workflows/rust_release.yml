@@ -20,18 +20,18 @@ jobs:
           - os: ubuntu-latest
             artifact_path: target/release/ctags_ls
             zip_name: ctags_ls-linux-x86_64.zip
-          # macOS Intel (x86_64)
-          - os: macos-13
+          # macOS Intel (x86_64) runner is now macOS 15
+          - os: macos-15-intel
             artifact_path: target/release/ctags_ls
             zip_name: ctags_ls-macos-x86_64.zip
-          # macOS Apple Silicon (arm64)
-          - os: macos-14
+          # macOS Apple Silicon (arm64) latest maps to macOS 15 arm64
+          - os: macos-latest
             artifact_path: target/release/ctags_ls
             zip_name: ctags_ls-macos-arm64.zip
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -52,7 +52,7 @@ jobs:
         run: zip ${{ matrix.zip_name }} ${{ matrix.artifact_path }}
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
           tag_name: ${{ github.ref_name }}
