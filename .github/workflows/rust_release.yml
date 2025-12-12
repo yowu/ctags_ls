@@ -20,9 +20,14 @@ jobs:
           - os: ubuntu-latest
             artifact_path: target/release/ctags_ls
             zip_name: ctags_ls-linux-x86_64.zip
-          - os: macos-latest
+          # macOS Intel (x86_64)
+          - os: macos-13
             artifact_path: target/release/ctags_ls
             zip_name: ctags_ls-macos-x86_64.zip
+          # macOS Apple Silicon (arm64)
+          - os: macos-14
+            artifact_path: target/release/ctags_ls
+            zip_name: ctags_ls-macos-arm64.zip
 
     steps:
       - name: Checkout code

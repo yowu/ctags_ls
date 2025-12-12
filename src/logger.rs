@@ -1,17 +1,9 @@
-use std::fs::OpenOptions;
 use std::io::{self, Write};
 
 pub struct Logger;
 
 impl Logger {
     pub fn setup() -> io::Result<()> {
-        let mut log_file_path = std::env::temp_dir();
-        log_file_path.push("ctags_ls.log");
-
-        let log_file = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(log_file_path)?;
         env_logger::Builder::new()
             .filter(None, log::LevelFilter::Info)
             .format(|buf, record| {
@@ -24,7 +16,7 @@ impl Logger {
                     record.args()
                 )
             })
-            .target(env_logger::Target::Pipe(Box::new(log_file)))
+            .target(env_logger::Target::Stderr)
             .init();
 
         Ok(())
