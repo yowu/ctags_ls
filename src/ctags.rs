@@ -3,7 +3,7 @@ use std::{
     process::Command,
 };
 
-use crate::{logger::Logger, workspace::Workspace};
+use crate::{logger::Logger, utils::UriUtils, workspace::Workspace};
 
 #[derive(Debug)]
 pub struct CtagsEntry {
@@ -27,7 +27,7 @@ impl CtagsHandler {
                     .output()
                     .map_err(|e| {
                         Logger::error(&format!("Failed to execute readtags: {:?}", e));
-                        io::Error::new(io::ErrorKind::Other, "Failed to execute readtags")
+                        io::Error::other("Failed to execute readtags")
                     })?;
                 let stdout = String::from_utf8(output.stdout).map_err(|e| {
                     Logger::error(&format!("Invalid UTF-8 in readtags output: {:?}", e));
@@ -62,13 +62,14 @@ impl CtagsHandler {
             return None;
         }
 
+        let folder_path = match UriUtils::uri_to_file_path(&workspace.folder.uri) {
+            Ok(path) => path,
+            Err(_) => return None,
+        };
+
         Some(CtagsEntry {
             name: parts[0].to_string(),
-            file: format!(
-                "{}/{}",
-                workspace.folder.uri.to_file_path().unwrap().display(),
-                parts[1]
-            ),
+            file: format!("{}/{}", folder_path.display(), parts[1]),
             pattern: pattern.to_string(),
             kind: kind_parts[1].to_string(),
         })

@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-lsp-server = "0.6.0"
-lsp-types = "0.91.0"
+lsp-server = "0.7.9"
+lsp-types = "0.97.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1", features = ["full"] }
-log = "0.4.14"
-env_logger = "0.10.0"
-chrono = "0.4.19"
+log = "0.4.29"
+env_logger = "0.11.8"
+chrono = "0.4.42"

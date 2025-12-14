@@ -5,14 +5,15 @@ use std::{
 };
 
 use lsp_server::{Message, Request, Response};
-use lsp_types::{GotoDefinitionParams, GotoDefinitionResponse, Location, Position, Range, Url};
+use lsp_types::{GotoDefinitionParams, GotoDefinitionResponse, Location, Position, Range};
 
+use crate::{LspServer, workspace::Workspace};
 use crate::{
     ctags::{CtagsEntry, CtagsHandler},
     document::DocumentsCache,
     logger::Logger,
+    utils::UriUtils,
 };
-use crate::{workspace::Workspace, LspServer};
 
 fn find_tags_location(entries: &Vec<CtagsEntry>, locations: &mut Vec<Location>) -> io::Result<()> {
     // Group entries by file to minimize file reads
@@ -35,25 +36,25 @@ fn find_tags_location(entries: &Vec<CtagsEntry>, locations: &mut Vec<Location>) 
                 if found[idx] {
                     continue;
                 }
-                if line.contains(&entry.pattern) {
-                    if let Some(character) = line.find(&entry.name) {
-                        locations.push(Location {
-                            uri: Url::parse(&format!("file://{}", entry.file))
-                                .expect("Failed to parse URL"),
-                            range: Range {
-                                start: Position {
-                                    line: line_num as u32,
-                                    character: character as u32,
-                                },
-                                end: Position {
-                                    line: line_num as u32,
-                                    character: (character + entry.name.len()) as u32,
-                                },
+                if line.contains(&entry.pattern)
+                    && let Some(character) = line.find(&entry.name)
+                {
+                    locations.push(Location {
+                        uri: UriUtils::file_path_to_uri(&entry.file)
+                            .expect("Failed to create URI from file path"),
+                        range: Range {
+                            start: Position {
+                                line: line_num as u32,
+                                character: character as u32,
                             },
-                        });
-                        found[idx] = true;
-                        break;
-                    }
+                            end: Position {
+                                line: line_num as u32,
+                                character: (character + entry.name.len()) as u32,
+                            },
+                        },
+                    });
+                    found[idx] = true;
+                    break;
                 }
             }
 
@@ -116,7 +117,7 @@ pub trait GotoHandler {
             .connection
             .sender
             .send(Message::Response(resp))
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+            .map_err(|e| io::Error::other(e.to_string()))?;
         Ok(())
     }
 }

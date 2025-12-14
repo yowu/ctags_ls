@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use crate::logger::Logger;
+use crate::utils::UriUtils;
 use lsp_types::WorkspaceFolder;
 
 #[derive(Debug)]
@@ -31,14 +32,16 @@ impl WorkspaceManager {
 
     pub fn add_workspace(&mut self, folder: &WorkspaceFolder) {
         if self.workspaces.iter().any(|w| w.folder.uri == folder.uri) {
-            Logger::info(&format!("Workspace already exists: {}", folder.uri));
+            Logger::info(&format!("Workspace already exists: {:?}", folder.uri));
             return;
         }
 
-        let folder_path = if let Ok(path) = folder.uri.to_file_path() {
-            path
-        } else {
-            return;
+        let folder_path = match UriUtils::uri_to_file_path(&folder.uri) {
+            Ok(path) => path,
+            Err(e) => {
+                Logger::error(&format!("Failed to convert URI to file path: {}", e));
+                return;
+            }
         };
 
         let mut tag_file_path = None;

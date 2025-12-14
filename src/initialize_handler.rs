@@ -6,11 +6,12 @@ use lsp_types::{
     ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind, WorkspaceFolder,
 };
 
-use crate::{logger::Logger, workspace::WorkspaceManager, LspServer};
+use crate::{LspServer, logger::Logger, workspace::WorkspaceManager};
 
 pub struct InitializeHandler;
 
 impl InitializeHandler {
+    #[allow(deprecated)]
     fn initialize_workspaces(params: &InitializeParams) -> WorkspaceManager {
         let tag_patterns = params
             .initialization_options
@@ -68,7 +69,7 @@ impl InitializeHandler {
             .connection
             .sender
             .send(Message::Response(resp))
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+            .map_err(|e| io::Error::other(e.to_string()))?;
         Ok(())
     }
 }

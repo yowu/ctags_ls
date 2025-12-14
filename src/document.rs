@@ -1,6 +1,6 @@
 use std::{collections::HashMap, io};
 
-use lsp_types::{Position, TextDocumentContentChangeEvent, Url};
+use lsp_types::{Position, TextDocumentContentChangeEvent, Uri};
 
 pub struct TextDocument {
     text: String,
@@ -56,7 +56,7 @@ impl TextDocument {
 }
 
 pub struct DocumentsCache {
-    documents: HashMap<Url, TextDocument>,
+    documents: HashMap<Uri, TextDocument>,
 }
 
 impl DocumentsCache {
@@ -66,19 +66,19 @@ impl DocumentsCache {
         }
     }
 
-    pub fn insert(&mut self, uri: Url, document: TextDocument) {
+    pub fn insert(&mut self, uri: Uri, document: TextDocument) {
         self.documents.insert(uri, document);
     }
 
-    pub fn remove(&mut self, uri: &Url) {
+    pub fn remove(&mut self, uri: &Uri) {
         self.documents.remove(uri);
     }
 
-    pub fn get(&self, uri: &Url) -> Option<&TextDocument> {
+    pub fn get(&self, uri: &Uri) -> Option<&TextDocument> {
         self.documents.get(uri)
     }
 
-    pub fn get_mut(&mut self, uri: &Url) -> Option<&mut TextDocument> {
+    pub fn get_mut(&mut self, uri: &Uri) -> Option<&mut TextDocument> {
         self.documents.get_mut(uri)
     }
 }
