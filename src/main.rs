@@ -1,9 +1,10 @@
 mod ctags;
+mod document;
 mod goto_handler;
 mod initialize_handler;
 mod logger;
 mod server;
-mod document;
+mod queries;
 mod workspace;
 
 use logger::Logger;

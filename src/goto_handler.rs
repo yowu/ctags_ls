@@ -11,10 +11,37 @@ use crate::{
     ctags::{CtagsEntry, CtagsHandler},
     document::DocumentsCache,
     logger::Logger,
+    workspace::Workspace,
+    queries::SymbolType,
+    LspServer,
 };
-use crate::{workspace::Workspace, LspServer};
 
-fn find_tags_location(entries: &Vec<CtagsEntry>, locations: &mut Vec<Location>) -> io::Result<()> {
+/// Filter ctags entries based on the syntactic role of the symbol under cursor.
+/// Maps each SymbolType to the set of ctags kinds that are relevant for that context.
+/// Returns entries unchanged for ambiguous contexts (Variable, Field, Parameter, Function).
+pub fn refine_by_symbol_type(entries: Vec<CtagsEntry>, symbol_type: &SymbolType) -> Vec<CtagsEntry> {
+    let allowed_kinds: &[&str] = match symbol_type {
+        SymbolType::Type => &[
+            "c", "class", "s", "struct", "t", "typedef", "g", "enum", "u", "union", "n",
+            "namespace",
+        ],
+        SymbolType::Class => &["c", "class", "s", "struct"],
+        SymbolType::FunctionCall => &["f", "function", "p", "prototype"],
+        SymbolType::MethodCall => &["f", "function", "p", "prototype"],
+        SymbolType::FieldAccess => &["m", "member"],
+        SymbolType::Scope => &["c", "class", "s", "struct", "t", "typedef", "g", "enum", "u", "union", "n", "namespace"],
+        _ => return entries,
+    };
+
+    entries
+        .into_iter()
+        .filter(|entry| allowed_kinds.contains(&entry.kind.as_str()))
+        .collect()
+}
+
+/// Resolve ctags entries to LSP Locations by scanning source files
+/// for matching patterns.
+fn find_tags_location(entries: &[CtagsEntry], locations: &mut Vec<Location>) -> io::Result<()> {
     // Group entries by file to minimize file reads
     let mut file_to_entries: HashMap<String, Vec<&CtagsEntry>> = HashMap::new();
     for entry in entries {
@@ -78,22 +105,44 @@ pub trait GotoHandler {
         let position = params.text_document_position_params.position;
         let uri = params.text_document_position_params.text_document.uri;
 
-        let symbol = documents
-            .get(&uri)
-            .ok_or_else(|| {
-                Logger::error(&format!("Document not found: {:?}", uri));
-                io::Error::new(io::ErrorKind::NotFound, "Document not found")
-            })?
-            .get_symbol_at_position(position)?;
+        let doc = documents.get(&uri).ok_or_else(|| {
+            Logger::error(&format!("Document not found: {:?}", uri));
+            io::Error::new(io::ErrorKind::NotFound, "Document not found")
+        })?;
+
+        let symbol = doc.get_symbol_at_position(position)?;
+        let symbol_type = doc.query_symbol_type(position);
+        Logger::info(&format!(
+            "Symbol '{}' analyzed as {:?}",
+            symbol, symbol_type
+        ));
+
         let entries = CtagsHandler::query_ctags(workspaces, &symbol)?;
+
+        // Apply handler-specific filter (definition/declaration/implementation)
+        let filtered_entries: Vec<CtagsEntry> = entries
+            .into_iter()
+            .filter(|entry| self.filter(entry))
+            .collect();
+
+        // Apply symbol-type-based refinement if available, with fallback
+        let final_entries = if let Some(ref st) = symbol_type {
+            let refined = refine_by_symbol_type(filtered_entries.clone(), st);
+            if refined.is_empty() {
+                Logger::info(&format!(
+                    "Symbol type refinement for {:?} produced no results, falling back",
+                    st
+                ));
+                filtered_entries
+            } else {
+                refined
+            }
+        } else {
+            filtered_entries
+        };
+
         let mut locations: Vec<Location> = Vec::new();
-        find_tags_location(
-            &entries
-                .into_iter()
-                .filter(|entry| self.filter(entry))
-                .collect(),
-            &mut locations,
-        )?;
+        find_tags_location(&final_entries, &mut locations)?;
         Logger::info(&format!(
             "Found {} locations for symbol: {}",
             locations.len(),

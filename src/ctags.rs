@@ -5,7 +5,7 @@ use std::{
 
 use crate::{logger::Logger, workspace::Workspace};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CtagsEntry {
     pub name: String,
     pub file: String,
