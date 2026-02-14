@@ -11,8 +11,9 @@ use crate::{
     ctags::{CtagsEntry, CtagsHandler},
     document::DocumentsCache,
     logger::Logger,
+    syntax::SyntaxEngine,
+    syntax::SymbolType,
     workspace::Workspace,
-    queries::SymbolType,
     LspServer,
 };
 
@@ -110,12 +111,18 @@ pub trait GotoHandler {
             io::Error::new(io::ErrorKind::NotFound, "Document not found")
         })?;
 
-        let symbol = doc.get_symbol_at_position(position)?;
-        let symbol_type = doc.query_symbol_type(position);
+        let syntax = SyntaxEngine::analyze_at(doc, &uri, position)?;
+        let symbol = syntax.symbol;
+        let symbol_type = syntax.symbol_type;
         Logger::info(&format!(
             "Symbol '{}' analyzed as {:?}",
             symbol, symbol_type
         ));
+
+        if let Some(location) = syntax.local_definition {
+            Logger::info(&format!("Resolved '{}' locally via tree-sitter", symbol));
+            return Ok(GotoDefinitionResponse::Array(vec![location]));
+        }
 
         let entries = CtagsHandler::query_ctags(workspaces, &symbol)?;
 
@@ -125,17 +132,21 @@ pub trait GotoHandler {
             .filter(|entry| self.filter(entry))
             .collect();
 
-        // Apply symbol-type-based refinement if available, with fallback
-        let final_entries = if let Some(ref st) = symbol_type {
-            let refined = refine_by_symbol_type(filtered_entries.clone(), st);
-            if refined.is_empty() {
-                Logger::info(&format!(
-                    "Symbol type refinement for {:?} produced no results, falling back",
-                    st
-                ));
-                filtered_entries
+        // Apply symbol-type-based refinement only when multiple candidates exist, with fallback
+        let final_entries = if filtered_entries.len() > 1 {
+            if let Some(ref st) = symbol_type {
+                let refined = refine_by_symbol_type(filtered_entries.clone(), st);
+                if refined.is_empty() {
+                    Logger::info(&format!(
+                        "Symbol type refinement for {:?} produced no results, falling back",
+                        st
+                    ));
+                    filtered_entries
+                } else {
+                    refined
+                }
             } else {
-                refined
+                filtered_entries
             }
         } else {
             filtered_entries

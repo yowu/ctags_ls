@@ -110,9 +110,10 @@ impl LspServer {
                 let params: DidOpenTextDocumentParams = serde_json::from_value(notif.params)
                     .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
                 let mut documents = self.documents.lock().unwrap();
+                let uri = params.text_document.uri;
                 documents.insert(
-                    params.text_document.uri,
-                    TextDocument::new(params.text_document.text),
+                    uri.clone(),
+                    TextDocument::new(&uri, params.text_document.text),
                 );
             }
             "textDocument/didChange" => {

@@ -4,7 +4,7 @@ mod goto_handler;
 mod initialize_handler;
 mod logger;
 mod server;
-mod queries;
+mod syntax;
 mod workspace;
 
 use logger::Logger;
